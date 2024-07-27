@@ -1,37 +1,28 @@
-document.getElementById('listJs').addEventListener('click', function() {
-    chrome.tabs.executeScript({
-      file: 'content.js'
-    });
-  });
-  
-
-
-  chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-    //Assing the varaible url to the current tab url
-    var url =   sender.tab.url;
-
-
-    console.log('Received a message:', message);
-    if (message.type === "jsFiles") {
-      var jsFilesList = url + '\n' + message.data.join('\n');
-      // var jsFilesList = message.data.join('\n');
-      console.log('jsFilesList:', jsFilesList);
-      document.getElementById('jsFilesList').textContent = jsFilesList;
-      copyToClipboard(jsFilesList);
-    } else {
-      console.log('Unexpected message type:', message.type);
+document.getElementById("listJs").addEventListener("click", function () {
+  chrome.runtime.sendMessage({ action: "getJsFiles" }, function (response) {
+    if (response.error) {
+      console.error("Error:", response.error);
+      document.getElementById("jsFilesList").textContent =
+        "Error: " + response.error;
+    } else if (response.data) {
+      chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+        var url = tabs[0].url;
+        var jsFilesList = url + "\n" + response.data.join("\n");
+        document.getElementById("jsFilesList").textContent = jsFilesList;
+        copyToClipboard(jsFilesList);
+      });
     }
   });
+});
 
-
-
-
-  function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(function() {
+function copyToClipboard(text) {
+  navigator.clipboard
+    .writeText(text)
+    .then(function () {
       // Success message
-    }).catch(function(err) {
+    })
+    .catch(function (err) {
       // Error handling
-      console.error('Could not copy text: ', err);
+      console.error("Could not copy text: ", err);
     });
-  }
-  
+}
